@@ -46,6 +46,11 @@ class FeatureNamedPipeline(sklearn.pipeline.Pipeline):
 
 # <codecell>
 
+def make_featurenamed_pipeline(*steps, feature_function=None):
+    return FeatureNamedPipeline(sklearn.pipeline._name_estimators(steps), feature_function=feature_function)
+
+# <codecell>
+
 class PickFeature(sklearn.base.BaseEstimator):
     """
     Picks features, see FeatureNamedPipeline for full example.
