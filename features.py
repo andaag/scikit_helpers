@@ -51,6 +51,24 @@ def make_featurenamed_pipeline(*steps, feature_function=None):
 
 # <codecell>
 
+class ConvertToDataframe(sklearn.base.BaseEstimator):
+    """
+    Converts a numpy array to pandas dataframe in a pipeline/gridsearch.
+    Simply put ConvertToDataframe(dataframe.columns) in the top of your pipeline.
+    """
+    def __init__(self, columns):
+        self.columns = columns
+        
+    def fit(self, X, y=None):
+        return self
+        
+    def transform(self, items):
+        if type(items) != pd.DataFrame:
+            items = pd.DataFrame.from_records(items, columns=self.columns)
+        return items
+
+# <codecell>
+
 class PickFeature(sklearn.base.BaseEstimator):
     """
     Picks features, see FeatureNamedPipeline for full example.
@@ -59,9 +77,8 @@ class PickFeature(sklearn.base.BaseEstimator):
     - return_single_row = returns [0] instead of [[0]]
     - return_sparse = return sparse matrix
     """
-    def __init__(self, select_columns=[], column_names=None, return_single_row=False, return_sparse=False):
+    def __init__(self, select_columns=[], return_single_row=False, return_sparse=False):
         self.select_columns = select_columns
-        self.column_names = column_names
         self.return_single_row = return_single_row
         self.return_sparse = return_sparse
         assert len(self.select_columns) > 0
@@ -75,8 +92,7 @@ class PickFeature(sklearn.base.BaseEstimator):
     
     def transform(self, items):
         if type(items) is not pd.DataFrame:
-            assert self.column_names is not None
-            items = pd.DataFrame.from_records(items, columns=self.column_names)
+            raise Exception("PickFeature requires a dataframe, put ConvertToDataframe(column_names) in the start of the pipeline")
         if self.return_single_row:
             result = items[self.select_columns[0]]
         else:
