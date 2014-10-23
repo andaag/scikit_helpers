@@ -162,11 +162,9 @@ class ProbabilityPipeline(sklearn.pipeline.Pipeline):
         data, then use fit_transform on transformed data using the final
         estimator."""
         Xt, fit_params = self._pre_transform(X, y, **fit_params)
-        if hasattr(self.steps[-1][-1], 'fit_transform'):
-            return self.steps[-1][-1].fit_transform(Xt, y, **fit_params)
-        else:
-            return self.steps[-1][-1].fit(Xt, y, **fit_params).transform(Xt)
-    
+        self.steps[-1][-1].fit(Xt, y, **fit_params)
+        return self.transform(Xt)
+        
     def transform(self, X):
         if self.log_proba:
             predicted = super(ProbabilityPipeline, self).predict_log_proba(X)
