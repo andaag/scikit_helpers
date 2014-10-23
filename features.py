@@ -90,6 +90,16 @@ class PickFeature(sklearn.base.BaseEstimator):
     def fit(self, items, y=None):
         return self
     
+    def fit_transform(self, X, y=None, **fit_params):
+        """Fit all the transforms one after the other and transform the
+        data, then use fit_transform on transformed data using the final
+        estimator."""
+        Xt, fit_params = self._pre_transform(X, y, **fit_params)
+        if hasattr(self.steps[-1][-1], 'fit_transform'):
+            return self.steps[-1][-1].fit_transform(Xt, y, **fit_params)
+        else:
+            return self.steps[-1][-1].fit(Xt, y, **fit_params).transform(Xt)
+    
     def transform(self, items):
         if type(items) is not pd.DataFrame:
             raise Exception("PickFeature requires a dataframe, put ConvertToDataframe(column_names) in the start of the pipeline")
@@ -146,6 +156,16 @@ class ProbabilityPipeline(sklearn.pipeline.Pipeline):
         
     def get_feature_names(self):
         return self.column_names
+    
+    def fit_transform(self, X, y=None, **fit_params):
+        """Fit all the transforms one after the other and transform the
+        data, then use fit_transform on transformed data using the final
+        estimator."""
+        Xt, fit_params = self._pre_transform(X, y, **fit_params)
+        if hasattr(self.steps[-1][-1], 'fit_transform'):
+            return self.steps[-1][-1].fit_transform(Xt, y, **fit_params)
+        else:
+            return self.steps[-1][-1].fit(Xt, y, **fit_params).transform(Xt)
     
     def transform(self, X):
         if self.log_proba:
