@@ -57,6 +57,8 @@ class ConvertToDataframe(sklearn.base.BaseEstimator):
     Simply put ConvertToDataframe(dataframe.columns) in the top of your pipeline.
     """
     def __init__(self, columns):
+        if (type(columns) == pd.core.index.Index):
+            columns = columns.values
         self.columns = columns
         
     def fit(self, X, y=None):
