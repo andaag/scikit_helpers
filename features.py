@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
 
-# <codecell>
+# coding: utf-8
+
+# In[2]:
 
 import numpy as np
 import sklearn
@@ -10,7 +10,8 @@ import sklearn.base
 import scipy
 import pandas as pd
 
-# <codecell>
+
+# In[3]:
 
 class FeatureNamedPipeline(sklearn.pipeline.Pipeline):
     """
@@ -44,12 +45,14 @@ class FeatureNamedPipeline(sklearn.pipeline.Pipeline):
     def get_feature_names(self):
         return eval(self.feature_function)(self)
 
-# <codecell>
+
+# In[4]:
 
 def make_featurenamed_pipeline(*steps, feature_function=None):
     return FeatureNamedPipeline(sklearn.pipeline._name_estimators(steps), feature_function=feature_function)
 
-# <codecell>
+
+# In[5]:
 
 class ConvertToDataframe(sklearn.base.BaseEstimator):
     """
@@ -69,7 +72,8 @@ class ConvertToDataframe(sklearn.base.BaseEstimator):
             items = pd.DataFrame.from_records(items, columns=self.columns)
         return items
 
-# <codecell>
+
+# In[6]:
 
 class PickFeature(sklearn.base.BaseEstimator):
     """
@@ -109,7 +113,8 @@ class PickFeature(sklearn.base.BaseEstimator):
             result = result.to_sparse()
         return result
 
-# <codecell>
+
+# In[7]:
 
 class ToDense(sklearn.base.BaseEstimator):
     """
@@ -122,7 +127,8 @@ class ToDense(sklearn.base.BaseEstimator):
     def transform(self, items):
         return items.todense()
 
-# <codecell>
+
+# In[8]:
 
 class ToSparse(sklearn.base.BaseEstimator):
     """
@@ -135,36 +141,24 @@ class ToSparse(sklearn.base.BaseEstimator):
     def transform(self, items):
         return scipy.sparse.csr_matrix(items)
 
-# <codecell>
 
-class ProbabilityPipeline(sklearn.pipeline.Pipeline):
+# In[9]:
+
+class ProbabilityEstimator(sklearn.base.BaseEstimator):
     """
-    Simply a pipeline where the end transform function calls proba/log_proba.
-    Can be used as part of a larger pipeline
+    ProbabilityEstimator(sklearn.linear_model.SGDClassifier(loss='modified_huber'))
     """
-    def __init__(self, steps, log_proba=False):
-        sklearn.pipeline.Pipeline.__init__(self, steps)
+    def __init__(self, base_estimator=None, log_proba=False):
+        self.base_estimator = base_estimator
         self.log_proba = log_proba
         
-    def get_feature_names(self):
-        return self.column_names
-    
-    def fit_transform(self, X, y=None, **fit_params):
-        """Fit all the transforms one after the other and transform the
-        data, then use fit_transform on transformed data using the final
-        estimator."""
-        Xt, fit_params = self._pre_transform(X, y, **fit_params)
-        self.steps[-1][-1].fit(Xt, y, **fit_params)
-        return self.transform(Xt)
+    def fit(self, X, y=None):
+        self.base_estimator.fit(X, y)
+        return self
         
-    def transform(self, X):
+    def transform(self, X):        
         if self.log_proba:
-            predicted = super(ProbabilityPipeline, self).predict_log_proba(X)
+            return self.base_estimator.predict_log_proba(X)
         else:
-            predicted = super(ProbabilityPipeline, self).predict_proba(X)
-        self.column_names = ["col_"+str(i) for i in range(predicted.shape[1])]
-        return predicted
-
-# <codecell>
-
+            return self.base_estimator.predict_proba(X)
 
