@@ -162,3 +162,8 @@ class ProbabilityEstimator(sklearn.base.BaseEstimator):
         else:
             return self.base_estimator.predict_proba(X)
 
+
+# In[ ]:
+
+
+
