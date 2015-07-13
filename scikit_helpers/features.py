@@ -81,12 +81,12 @@ class PickFeature(sklearn.base.BaseEstimator):
     - select_columns = which columns to select
     - column_names = column names if columns being parsed in are not already a dataframe
     - return_single_row = returns [0] instead of [[0]]
-    - return_sparse = return sparse matrix
     """
-    def __init__(self, select_columns=[], return_single_row=False, return_sparse=False):
+    def __init__(self, select_columns=[], return_single_row=False):
+        if type(select_columns) == str:
+            select_columns = [select_columns]
         self.select_columns = select_columns
         self.return_single_row = return_single_row
-        self.return_sparse = return_sparse
         assert len(self.select_columns) > 0
         assert not self.return_single_row or len(self.select_columns) == 1
     
@@ -103,14 +103,6 @@ class PickFeature(sklearn.base.BaseEstimator):
             result = items[self.select_columns[0]]
         else:
             result = items[self.select_columns]
-        if self.return_sparse:
-            if type(result) is not pd.DataFrame:
-                result = pd.DataFrame(result)
-                
-            if sum(result.dtypes == np.object) > 0:
-                print("WARNING: Will not be able to convert this to sparse due to objects in lists!")
-                print(result.dtypes[result.dtypes == np.object])
-            result = result.to_sparse()
         return result
 
 
