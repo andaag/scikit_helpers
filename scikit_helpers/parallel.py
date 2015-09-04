@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[162]:
+# In[ ]:
 
 import pandas as pd
 import numpy as np
@@ -9,14 +9,14 @@ import multiprocessing
 import psutil
 
 
-# In[163]:
+# In[ ]:
 
 def _apply_df(args):
     df, func, kwargs = args
     return df.apply(func, **kwargs)
 
 
-# In[164]:
+# In[ ]:
 
 def parallel(df, func, **kwargs):
     n_jobs = kwargs.pop('n_jobs') if 'n_jobs' in kwargs else 1
@@ -28,7 +28,7 @@ def parallel(df, func, **kwargs):
     return pd.concat(list(result))
 
 
-# In[165]:
+# In[ ]:
 
 #def f(v):
 #    return v / 2
@@ -37,7 +37,7 @@ def parallel(df, func, **kwargs):
 #a.head()
 
 
-# In[166]:
+# In[ ]:
 
 #dask.dataframe.from_pandas(a, 12).groupby("FakeGroup").apply(dbg).head()
 

@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 from datetime import datetime, timedelta 
 import os
@@ -13,7 +13,7 @@ import time
 import hashlib
 
 
-# In[2]:
+# In[ ]:
 
 class cached(object):
     def __init__(self, *args, **kwargs):
@@ -27,8 +27,6 @@ class cached(object):
             
             def quickhashdict(values):
                 items = list(values.items())
-                #if len(items) < 100:
-                #    return frozenset(sorted(v.items())
                 s = ""
                 size = len(items)
                 s += str(size)
@@ -55,26 +53,40 @@ class cached(object):
             filename = self.filename + "." + m.hexdigest()
             hashtime = time.time() - s
             print("Filename", filename)
-            if not os.path.exists(filename):
-                res = func(*args, **kwargs)
-                joblib.dump(res, filename, compress=3)
-                print("Cache miss", (time.time() - s), "hashtime", hashtime)
+            
+            isdf = os.path.exists(filename + ".df")
+            isjoblib = os.path.exists(filename)
+            
+            if isjoblib or isdf:
+                if isdf:
+                    #print("Loading pandas data...")
+                    res = pd.read_pickle(filename + ".df")
+                else:
+                    #print("Loading joblib data...")
+                    res = joblib.load(filename)
+                print("Cache hit", (time.time() - s), "hashtime", hashtime)
                 return res
             else:
-                res = joblib.load(filename)
-                print("Cache hit", (time.time() - s), "hashtime", hashtime)
+                res = func(*args, **kwargs)
+                if type(res) == pd.DataFrame or type(res) == pd.Series:
+                    #print("Writing pandas data...")
+                    res.to_pickle(filename + ".df")
+                else:
+                    #print("Writing generic data...")
+                    joblib.dump(res, filename, compress=3)
+                print("Cache miss", (time.time() - s), "hashtime", hashtime)
                 return res
         return inner
 
 
-# In[3]:
+# In[ ]:
 
 #@cached(filename="tmp/cache/testcache")
 #def test(a, test="asd"):
 #    return "The argument is", a, random.randint(1,100)
 
 
-# In[4]:
+# In[ ]:
 
 #test("simple")
 #test("A", test="bsd")
