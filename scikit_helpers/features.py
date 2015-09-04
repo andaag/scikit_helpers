@@ -13,43 +13,34 @@ import pandas as pd
 
 # In[3]:
 
-class FeatureNamedPipeline(sklearn.pipeline.Pipeline):
+class FeatureNamePipeline(sklearn.pipeline.Pipeline):
     """
-    Allows generating pipelines with get_feature_names:
-    
-    sklearn.pipeline.FeatureUnion([
-            ("testa", FeatureNamedPipeline([
-                ("multiple_columns", PickFeature(select_columns=['Col1', 'Col2'], column_names=data.columns, return_single_row=False)),
-                ("csr", ToSparse()),
-            ], feature_function="lambda x: x.named_steps["multiple_columns"].select_columns")),
-
-            ("testb", FeatureNamedPipeline([
-                ("single_column", PickFeature(select_columns=['TextColumn'], column_names=data.columns, return_single_row=True)),
-                ("vect", feature_extraction.text.CountVectorizer(min_df=0.1)),
-                ("denseup", ToDense()),
-                ("csr", ToSparse()),
-            ], feature_function="lambda x: x.named_steps["vect"].vocabulary_"))
-    ])
-    
-    Of course this example doesn't make much sense. You wouldn't want to convert something to dense and then back to sparse.
-    
-    NB : due to pickle limitations (that are probably fixable) lambdas must for now be strings due to multiprocessing.
-    NB2: colunm_names are only needed if the input isn't already a pandas dataframe. Note that you need a very recent 
-         pandas and scikit in order to push a dataframe into a pipeline.
-    
+    Very simple class that wraps pipeline and calls get_feature_names on the last level of the pipeline. 
+    If you have a pipeline ending in tfidfvectorizer for example this will just work and return feature names as expected
     """
     def __init__(self, steps, feature_function=None):
         sklearn.pipeline.Pipeline.__init__(self, steps)
-        self.feature_function = feature_function
         
     def get_feature_names(self):
-        return eval(self.feature_function)(self)
+        """Get feature names from last step in pipeline
+        Returns
+        -------
+        feature_names : list of strings
+            Names of the features produced by last step in transform.
+        """
+        last_step = self.steps[-1]
+        transformer = last_step[1]
+        name = last_step[0]
+        if not hasattr(transformer, 'get_feature_names'):
+            raise AttributeError("Transformer %s does not provide"
+                                 " get_feature_names." % str(name))
+        return transformer.get_feature_names()
 
 
 # In[4]:
 
-def make_featurenamed_pipeline(*steps, feature_function=None):
-    return FeatureNamedPipeline(sklearn.pipeline._name_estimators(steps), feature_function=feature_function)
+def make_featurename_pipeline(*steps):
+    return FeatureNamePipeline(sklearn.pipeline._name_estimators(steps))
 
 
 # In[5]:
@@ -58,6 +49,8 @@ class ConvertToDataframe(sklearn.base.BaseEstimator):
     """
     Converts a numpy array to pandas dataframe in a pipeline/gridsearch.
     Simply put ConvertToDataframe(dataframe.columns) in the top of your pipeline.
+    
+     - should not be needed on recent versions of sklearn.
     """
     def __init__(self, columns):
         if (type(columns) == pd.core.index.Index):
@@ -77,7 +70,7 @@ class ConvertToDataframe(sklearn.base.BaseEstimator):
 
 class PickFeature(sklearn.base.BaseEstimator):
     """
-    Picks features, see FeatureNamedPipeline for full example.
+    Picks features.
     - select_columns = which columns to select
     - column_names = column names if columns being parsed in are not already a dataframe
     - return_single_row = returns [0] instead of [[0]]
