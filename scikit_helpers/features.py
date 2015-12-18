@@ -1,7 +1,4 @@
-
-# coding: utf-8
-
-# In[2]:
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import sklearn
@@ -9,9 +6,6 @@ import sklearn.pipeline
 import sklearn.base
 import scipy
 import pandas as pd
-
-
-# In[3]:
 
 class FeatureNamePipeline(sklearn.pipeline.Pipeline):
     """
@@ -36,14 +30,8 @@ class FeatureNamePipeline(sklearn.pipeline.Pipeline):
                                  " get_feature_names." % str(name))
         return transformer.get_feature_names()
 
-
-# In[4]:
-
 def make_featurename_pipeline(*steps):
     return FeatureNamePipeline(sklearn.pipeline._name_estimators(steps))
-
-
-# In[5]:
 
 class ConvertToDataframe(sklearn.base.BaseEstimator):
     """
@@ -64,9 +52,6 @@ class ConvertToDataframe(sklearn.base.BaseEstimator):
         if type(items) != pd.DataFrame:
             items = pd.DataFrame.from_records(items, columns=self.columns)
         return items
-
-
-# In[6]:
 
 class PickFeature(sklearn.base.BaseEstimator):
     """
@@ -98,9 +83,6 @@ class PickFeature(sklearn.base.BaseEstimator):
             result = items[self.select_columns]
         return result
 
-
-# In[7]:
-
 class ToDense(sklearn.base.BaseEstimator):
     """
     Converts data to dense, see FeatureNamedPipeline for full example.
@@ -112,9 +94,6 @@ class ToDense(sklearn.base.BaseEstimator):
     def transform(self, items):
         return items.todense()
 
-
-# In[8]:
-
 class ToSparse(sklearn.base.BaseEstimator):
     """
     Converts data to sparse, see FeatureNamedPipeline for full example.
@@ -125,9 +104,6 @@ class ToSparse(sklearn.base.BaseEstimator):
     
     def transform(self, items):
         return scipy.sparse.csr_matrix(items)
-
-
-# In[9]:
 
 class ProbabilityEstimator(sklearn.base.BaseEstimator):
     """
@@ -146,9 +122,4 @@ class ProbabilityEstimator(sklearn.base.BaseEstimator):
             return self.base_estimator.predict_log_proba(X)
         else:
             return self.base_estimator.predict_proba(X)
-
-
-# In[ ]:
-
-
 

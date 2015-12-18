@@ -1,7 +1,4 @@
-
-# coding: utf-8
-
-# In[ ]:
+# -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta 
 import os
@@ -11,9 +8,6 @@ import random
 import time
 
 import hashlib
-
-
-# In[ ]:
 
 class cached(object):
     def __init__(self, *args, **kwargs):

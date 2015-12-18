@@ -1,23 +1,13 @@
-
-# coding: utf-8
-
-# In[ ]:
+# -*- coding: utf-8 -*-
 
 import pandas as pd
 import numpy as np
 import multiprocessing
 import psutil
 
-
-# In[ ]:
-
 def _apply_df(args):
     df, func, kwargs = args
     return df.apply(func, **kwargs)
-
-
-# In[ ]:
-
 def parallel(df, func, **kwargs):
     n_jobs = kwargs.pop('n_jobs') if 'n_jobs' in kwargs else 1
     if n_jobs == -1:

@@ -1,85 +1,78 @@
+# -*- coding: utf-8 -*-
 
-# coding: utf-8
-
-# In[1]:
-
-from sklearn.cross_validation import ShuffleSplit
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn import cross_validation
+from sklearn.learning_curve import learning_curve
+
 from scipy.stats import sem
 import pylab as pl
 from sklearn.externals.joblib import Parallel, delayed
 from sklearn.base import clone
 from sklearn.cross_validation import ShuffleSplit, StratifiedShuffleSplit
 
-def _learning_curve_evaluate(clf, X, Y, train, test, score):
-    clf.fit(X[train], Y[train])
-    if score:
-        return clf.score(X[train], Y[train]), clf.score(X[test], Y[test])
-    return (clf.predict(X[train]), Y[train]), (clf.predict(X[test]), Y[test])
-    
+"""
+Shamelessly stolen from http://scikit-learn.org/stable/auto_examples/plot_learning_curve.html. I just keep it here for quicker access.
+"""
 
-def learning_curve(clf, X, Y, train_sizes=np.logspace(2,3,5,6).astype(np.int), n_iter=6, n_jobs=4, stratified=False, scorer=None):
+def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
+                        n_jobs=1, train_sizes=np.linspace(.1, 1.0, 5), scoring=None):
     """
-    Generates a learning curve.
-    
-    >>> learning_curve(RandomForestClassifier(n_jobs=-1), X, Y)
-    
-    train_sizes is an array consisting of the amount of data to use for each iteration.
-    n_iter is number of iterations to do in each shuffle split.
-    
-    This class is roughly 99.3% stolen from Oliver Grisel (http://ogrisel.com/)
+    Generate a simple plot of the test and traning learning curve.
+
+    Parameters
+    ----------
+    estimator : object type that implements the "fit" and "predict" methods
+        An object of that type which is cloned for each validation.
+
+    title : string
+        Title for the chart.
+
+    X : array-like, shape (n_samples, n_features)
+        Training vector, where n_samples is the number of samples and
+        n_features is the number of features.
+
+    y : array-like, shape (n_samples) or (n_samples, n_features), optional
+        Target relative to X for classification or regression;
+        None for unsupervised learning.
+
+    ylim : tuple, shape (ymin, ymax), optional
+        Defines minimum and maximum yvalues plotted.
+
+    cv : integer, cross-validation generator, optional
+        If an integer is passed, it is the number of folds (defaults to 3).
+        Specific cross-validation objects can be passed, see
+        sklearn.cross_validation module for the list of possible objects
+
+    n_jobs : integer, optional
+        Number of jobs to run in parallel (default 1).
     """
-    if type(Y) is not np.array:
-        Y = np.array(Y)
-    if type(train_sizes) is not np.array:
-        train_sizes = np.array(train_sizes)
-    
-    if max(train_sizes) > len(Y):
-        raise Exception("Train sizes > len(Y)")
-    
-    train_scores = np.zeros((train_sizes.shape[0], n_iter), dtype=np.float)
-    test_scores = np.zeros((train_sizes.shape[0], n_iter), dtype=np.float)
-    for i, train_size in enumerate(train_sizes):
-        cv = None
-        if stratified:
-            cv = StratifiedShuffleSplit(Y, n_iter=n_iter, train_size=train_size)
-        else:
-            cv = ShuffleSplit(len(Y), n_iter=n_iter, train_size=train_size)
-        
-        result = Parallel(n_jobs=n_jobs)(delayed(_learning_curve_evaluate)(clone(clf), X, Y, train, test, scorer is None) for (train, test) in cv)
-        for j, (train, test) in enumerate(result):
-            if scorer is not None:
-                train = scorer(train[1], train[0])
-                test = scorer(test[1], test[0])
-            train_scores[i, j] = train
-            test_scores[i, j] = test
+    plt.figure()
+    plt.title(title)
+    if ylim is not None:
+        plt.ylim(*ylim)
+    plt.xlabel("Training examples")
+    plt.ylabel("Score")
+    train_sizes, train_scores, test_scores = learning_curve(
+        estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes, scoring=scoring)
+    train_scores_mean = np.mean(train_scores, axis=1)
+    train_scores_std = np.std(train_scores, axis=1)
+    test_scores_mean = np.mean(test_scores, axis=1)
+    test_scores_std = np.std(test_scores, axis=1)
+    plt.grid()
 
-            
-    def plot_learning_curve():
-        from scipy.stats import sem
-        mean_train = np.mean(train_scores, axis=1)
-        confidence = sem(train_scores, axis=1) * 2
-        plt.fill_between(train_sizes, mean_train - confidence, mean_train + confidence, color='b', alpha=.2)
-        plt.plot(train_sizes, mean_train, 'o-k', c='b', label='Train score')
+    plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                     train_scores_mean + train_scores_std, alpha=0.1,
+                     color="r")
+    plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                     test_scores_mean + test_scores_std, alpha=0.1, color="g")
+    plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+             label="Training score")
+    plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+             label="Cross-validation score")
 
-        mean_test = np.mean(test_scores, axis=1)
-        confidence = sem(test_scores, axis=1) * 2
-        plt.fill_between(train_sizes, mean_test - confidence, mean_test + confidence, color='g', alpha=.2)
-        plt.plot(train_sizes, mean_test, 'o-k', c='g', label='Test score')
-
-        plt.xlabel('Training set size')
-        plt.ylabel('Score')
-        plt.xlim(0, max(train_sizes))
-        
-        ylimiter = max(np.array(train_scores).max(), np.array(test_scores).max(), 1.01)
-        
-        plt.ylim((None, ylimiter))
-        plt.legend(loc='best')
-        plt.title('Main train and test scores')
-    
-    plot_learning_curve()
-    return train_scores, test_scores
+    plt.legend(loc="best")
+    return plt
 
 def boxplot_parameters(clf):
         """Plot boxplot of RandomizedSearchCV parameters. Idea and some code stolen from:
@@ -118,9 +111,3 @@ def boxplot_parameters(clf):
             pl.xlabel(param_name)
             pl.ylabel("Val. Score")
             plt.show()
-
-
-# In[ ]:
-
-
-
